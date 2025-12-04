@@ -1,0 +1,49 @@
+\documentclass{article}
+\usepackage{listings}
+\usepackage{color} %red, green, blue, yellow, cyan, magenta, black, white
+\definecolor{mygreen}{RGB}{28,172,0} % color values Red, Green, Blue
+\definecolor{mylilas}{RGB}{170,55,241}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{hyperref}
+\usepackage{graphicx} % Required for inserting images
+\usepackage{booktabs} % For professional-looking table rules
+\usepackage{caption} % The booktabs package will give you nicer line spacing, but if you don't care about the spacing, you can use the standard hline command
+\usepackage{subcaption} % For creating subfigures and subtables
+\usepackage{float} % The standard floats.
+\usepackage{mathrsfs}
+
+\usepackage{matlab-prettifier}
+\title{Correcting minor bugs in the Richards-Wolf integration scheme.}
+\author{Max Watzky}
+\date{December 2025}
+\begin{document}
+\maketitle
+
+\noindent First, we note that Richards-Wolf equation (2.30) reads:
+\begin{align*}
+    e_y(P) = iA I_2 \sin(2 \phi_P)
+\end{align*}
+where $\phi_P$ is the x-y (azimuthal) angle from the origin to the point $P$ at which we wish to find the electric field.
+However, the current MATLAB code (in line 47 of the Richards-Wolf integration code) reads:
+\begin{align*}
+    \texttt{Ey=(I2.*cos(2*phi));}
+\end{align*}
+Additionally, we can note a subtle issue with the integration. The MATLAB  \texttt{trapz} function generally takes two arguments:
+\begin{align*}
+    \texttt{trapz(X, Y)}
+\end{align*}
+where \texttt{Y} is an array of values and \texttt{X} is the array of grid points that \texttt{Y} is defined over. However, the current MATLAB code computes the integrals in lines 37-39 like this:
+\begin{align*}
+    \texttt{I0(xidx,yidx,zidx)=trapz(I0integrand\_with\_field\_mask);} \\ 
+    \texttt{I1(xidx,yidx,zidx)=trapz(I1integrand\_with\_field\_mask);} \\ 
+    \texttt{I1(xidx,yidx,zidx)=trapz(I2integrand\_with\_field\_mask);} \\ 
+\end{align*}
+This ignores the fact that the integrands are defined over the grid of $\theta$ angles, denoted as the variable \texttt{r\_angle}. We can fix this by writing:
+\begin{align*}
+    \texttt{I0(xidx,yidx,zidx)=trapz(r\_angle, I0integrand\_with\_field\_mask);} \\ 
+    \texttt{I1(xidx,yidx,zidx)=trapz(r\_angle, I1integrand\_with\_field\_mask);} \\ 
+    \texttt{I1(xidx,yidx,zidx)=trapz(r\_angle, I2integrand\_with\_field\_mask);} \\ 
+\end{align*}
+With these two changes, the MATLAB and Python codes produce consistent values for the FWHM in the x/y and z-directions. This is remarkable, given that the underylying workings of the two codes are quite different.
+\end{document}
