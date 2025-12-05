@@ -39,7 +39,7 @@ z_mm = z_um / 1000;
 
 
 %% Compute PSF
-PSF = PSF_on_grid(x_mm, y_mm, z_mm, alpha, k, f_mm, fwhm_pupil_mm, n_medium, nTheta, nPhi, [], N); %no aberration function
+PSF = RW_on_grid(x_mm, y_mm, z_mm, alpha, k, f_mm, fwhm_pupil_mm, n_medium, nTheta, nPhi, [], N); %no aberration function
 
 %% Plot PSF: axial and lateral
 
