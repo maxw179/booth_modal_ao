@@ -1,6 +1,6 @@
 function [PSF] = RW_on_grid(x, y, z, alpha, k, f, fwhm_pupil, n, nTheta, nPhi, aberrationFunc, N)
 %
-%   [Ex, Ey, Ez] = E_integrate_RW(x, y, z, alpha, k, f, fwhm_pupil, n, ...
+%   [PSF] = RW_on_grid(x, y, z, alpha, k, f, fwhm_pupil, n, ...
 %                                 nTheta, nPhi, aberrationFunc, N)
 %
 %   All lengths (x,y,z,f,fwhm_pupil, wavelength used to define k) should
