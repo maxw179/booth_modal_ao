@@ -31,41 +31,15 @@ k      = 2*pi * n_medium / wavelength_mm;      % wavenumber in medium [1/mm]
 nTheta = 128;
 nPhi   = 128;
 
-%% Convert coordinates to mm for Debye integral
+%% Convert coordinates to mm for integra
 
 x_mm = x_um / 1000;     % µm -> mm
 y_mm = y_um / 1000;
 z_mm = z_um / 1000;
 
-nx = numel(x_mm);
-ny = numel(y_mm);
-nz = numel(z_mm);
 
-%% Compute field and PSF on x–z grid (y = 0 only)
-
-Ex = zeros(nx, ny, nz);
-Ey = zeros(nx, ny, nz);
-Ez = zeros(nx, ny, nz);
-
-fprintf('Computing PSF on %d x %d grid (y-plane only)...\n', nx, nz);
-
-for ix = 1:nx
-    for iy = 1:ny   
-        for iz = 1:nz
-            [Ex(ix,iy,iz), Ey(ix,iy,iz), Ez(ix,iy,iz)] = ...
-                E_integrate_RW( ...
-                    x_mm(ix), y_mm(iy), z_mm(iz), ...
-                    alpha, k, f_mm, fwhm_pupil_mm, n_medium, ...
-                    nTheta, nPhi, []);   % aberrationFunc = [] means no added aberration
-        end
-    end
-end
-
-PSF = abs(Ex).^2 + abs(Ey).^2 + abs(Ez).^2;
-PSF = PSF.^N;    % N-photon PSF
-
-% Squeeze out the singleton y dimension
-PSF = squeeze(PSF);   % size: [nx, nz]
+%% Compute PSF
+PSF = PSF_on_grid(x_mm, y_mm, z_mm, alpha, k, f_mm, fwhm_pupil_mm, n_medium, nTheta, nPhi, [], N); %no aberration function
 
 %% Plot PSF: axial and lateral
 
@@ -103,7 +77,7 @@ FWHMz = sum(flagz) * (z_um(2) - z_um(1));   % µm
 flagxy = profile_xy >= 0.5;
 FWHMxy = sum(flagxy) * (x_um(2) - x_um(1)); % µm
 
-% Optional bead deconvolution (same numbers as your script)
+% Optional bead deconvolution
 FWHMbead = 0.2;  % µm
 FWHMxy_meas = sqrt(FWHMxy.^2 + FWHMbead.^2);
 FWHMz_meas  = sqrt(FWHMz.^2  + FWHMbead.^2);

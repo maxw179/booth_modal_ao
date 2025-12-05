@@ -1,4 +1,54 @@
-function [Ex, Ey, Ez] = E_integrate_RW(x, y, z, alpha, k, f, fwhm_pupil, n, nTheta, nPhi, aberrationFunc)
+function [PSF] = PSF_on_grid(x, y, z, alpha, k, f, fwhm_pupil, n, nTheta, nPhi, aberrationFunc, N)
+%
+%   [Ex, Ey, Ez] = E_integrate_RW(x, y, z, alpha, k, f, fwhm_pupil, n, ...
+%                                 nTheta, nPhi, aberrationFunc, N)
+%
+%   All lengths (x,y,z,f,fwhm_pupil, wavelength used to define k) should
+%   be in the SAME UNITS (ideally mm)
+%
+%   Inputs:
+%       x, y, z       - VECTORIZED coordinates of field point (scalars, same units as f)
+%       alpha         - maximum cone angle (radians), alpha = asin(NA / n)
+%       k             - wavenumber in medium [1/unit], ideally k = 2*pi*n/lambda
+%       f             - focal length of objective (same units as x,y,z)
+%       fwhm_pupil    - Gaussian FWHM in back focal plane [same units as f]
+%       n             - refractive index
+%       nTheta        - number of theta samples
+%       nPhi          - number of phi samples
+%       aberrationFunc - function handle @(thetaGrid,phiGrid) -> phase (rad),
+%                        or [] / omitted for no aberration
+%       N              - microscope order (e.g. 3 for 3-photon)
+%
+%   Outputs:
+%       Ex, Ey, Ez    - complex field components at (x,y,z)
+
+    nx = numel(x);
+    ny = numel(y);
+    nz = numel(z);
+
+    Ex = zeros(nx, ny, nz);
+    Ey = zeros(nx, ny, nz);
+    Ez = zeros(nx, ny, nz);
+
+    fprintf('Computing PSF on %d x %d grid (y-plane only)...\n', nx, nz);
+
+    for ix = 1:nx
+        for iy = 1:ny   
+            for iz = 1:nz
+                [Ex(ix,iy,iz), Ey(ix,iy,iz), Ez(ix,iy,iz)] = ...
+                    single_integrate_RW( ...
+                        x(ix), y(iy), z(iz), ...
+                        alpha, k, f, fwhm_pupil, n, ...
+                        nTheta, nPhi, aberrationFunc);   % aberrationFunc = [] means no added aberration
+            end
+        end
+    end
+
+    PSF = abs(Ex).^2 + abs(Ey).^2 + abs(Ez).^2;
+    PSF = PSF.^N;    % N-photon PSF
+end
+
+function [Ex, Ey, Ez] = single_integrate_RW(x, y, z, alpha, k, f, fwhm_pupil, n, nTheta, nPhi, aberrationFunc)
 %
 %   [Ex, Ey, Ez] = E_integrate_RW(x, y, z, alpha, k, f, fwhm_pupil, n, ...
 %                                 nTheta, nPhi, aberrationFunc)
@@ -7,7 +57,7 @@ function [Ex, Ey, Ez] = E_integrate_RW(x, y, z, alpha, k, f, fwhm_pupil, n, nThe
 %   be in the SAME UNITS (ideally mm)
 %
 %   Inputs:
-%       x, y, z       - coordinates of field point (scalars, same units as f)
+%       x, y, z       - single coordinates of field point (scalars, same units as f)
 %       alpha         - maximum cone angle (radians), alpha = asin(NA / n)
 %       k             - wavenumber in medium [1/unit], ideally k = 2*pi*n/lambda
 %       f             - focal length of objective (same units as x,y,z)
@@ -40,7 +90,7 @@ function [Ex, Ey, Ez] = E_integrate_RW(x, y, z, alpha, k, f, fwhm_pupil, n, nThe
 
     cosT = cos(thetaGrid);
     sinT = sin(thetaGrid);
-    amp = gaussian_amplitude(thetaGrid, f, n, fwhm_pupil);  % same as Python
+    amp = gaussian_amplitude(thetaGrid, f, n, fwhm_pupil); 
     inside_factor = amp .* sqrt(cosT) .* sinT;
 
     %handling added aberration
